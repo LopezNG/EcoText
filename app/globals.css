@@ -96,6 +96,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 button:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(76, 175, 80, 0.32);
@@ -339,6 +344,22 @@ textarea::placeholder {
   font-weight: 600;
 }
 
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--flag-red-bg);
+  color: var(--flag-red);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .examples {
   display: flex;
   flex-direction: column;
@@ -461,6 +482,22 @@ textarea::placeholder {
   font-weight: 800;
 }
 
+.verdict-card.clear {
+  background: var(--green-claim-bg);
+}
+
+.verdict-card.clear h1 {
+  color: var(--font-primary);
+}
+
+.verdict-card.warning {
+  background: var(--flag-orange-bg);
+}
+
+.verdict-card.warning h1 {
+  color: var(--flag-orange);
+}
+
 .verdict-card span,
 .tactic span {
   color: var(--font-body);
@@ -502,10 +539,37 @@ textarea::placeholder {
 
 .progress span {
   display: block;
-  width: 85%;
   height: 100%;
   border-radius: 6px;
   background: var(--secondary);
+  transition: width 180ms ease;
+}
+
+.probability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.probability-grid div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+}
+
+.probability-grid span {
+  color: var(--font-secondary);
+  font-size: 13px;
+}
+
+.probability-grid strong {
+  color: var(--font-primary);
+  font-size: 16px;
 }
 
 .heat-title {
@@ -530,6 +594,11 @@ mark {
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 600;
+}
+
+.heat-body mark {
+  background: var(--flag-orange-bg);
+  color: var(--flag-orange);
 }
 
 mark.orange {
@@ -569,6 +638,10 @@ mark.red {
 
 .orange-dot {
   background: var(--flag-orange);
+}
+
+.green-dot {
+  background: var(--secondary);
 }
 
 .red-dot {
@@ -616,6 +689,16 @@ mark.red {
   font-size: 15px;
 }
 
+.phrase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phrase-list span {
+  color: var(--font-secondary);
+}
+
 .tactic button {
   display: inline-flex;
   align-items: center;
@@ -652,6 +735,16 @@ mark.red {
   color: var(--font-light);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.auxiliary span {
+  text-transform: capitalize;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .learn-content {
@@ -933,6 +1026,10 @@ mark.red {
 
   .between {
     gap: 16px;
+  }
+
+  .probability-grid {
+    grid-template-columns: 1fr;
   }
 
   .sins-grid {

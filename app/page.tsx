@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  AlertCircle,
   ArrowDownUp,
   ArrowRight,
   Award,
@@ -11,6 +12,7 @@ import {
   FileSearch,
   Info,
   Leaf,
+  LoaderCircle,
   Scale,
   Search,
   ShieldAlert,
@@ -23,16 +25,16 @@ import { useMemo, useState } from "react";
 
 const examples = [
   {
-    title: "Example Tweet",
-    text: "\"Our new sneakers are 100% eco-friendly and carbon neutral! #GreenFashion\"",
+    title: "Quantified Claim",
+    text: "Our 2025 packaging redesign reduced plastic use by 32% compared with 2022 levels, verified by our annual supplier audit.",
   },
   {
-    title: "Product Blurb",
-    text: "\"Made with all-natural ingredients, our formula has zero environmental impact.\"",
+    title: "Vague Claim",
+    text: "Our eco-friendly product is a responsible choice for a better tomorrow, delivering sustainable solutions and positive impact.",
   },
   {
-    title: "Article Excerpt",
-    text: "\"The company claims to offset all emissions, but no third-party audit was cited.\"",
+    title: "Neutral Fact",
+    text: "The company opened a new distribution center in March and hired 40 additional logistics employees.",
   },
 ];
 
@@ -102,6 +104,23 @@ const sins = [
 
 type Screen = "analyze" | "results" | "learn";
 
+type AnalysisResult = {
+  label: "greenwashing" | "not_greenwashing";
+  confidence: number;
+  probabilities: {
+    greenwashing: number;
+    not_greenwashing: number;
+  };
+  sentiment: {
+    label: "positive" | "neutral" | "negative";
+    score: number;
+  };
+  suspicious_phrases: string[];
+  highlighted_text: string;
+};
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 const offModeBackgrounds: Record<Screen, { src: string; className: string }> = {
   analyze: { src: "/background/Landing.gif", className: "landing-backdrop" },
   results: { src: "/background/Analysis_Result.gif", className: "results-backdrop" },
@@ -113,17 +132,48 @@ export default function Home() {
   const [text, setText] = useState("");
   const [feedback, setFeedback] = useState<"yes" | "no" | null>(null);
   const [isLowCarbon, setIsLowCarbon] = useState(true);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState("");
 
   const enteredText = useMemo(() => text.trim() || defaultText, [text]);
   const background = offModeBackgrounds[screen];
 
-  function analyze() {
+  async function analyze() {
+    const textToAnalyze = text.trim();
+    if (!textToAnalyze) {
+      setError("Paste some sustainability text before running the analyzer.");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError("");
     setFeedback(null);
-    setScreen("results");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToAnalyze }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Analysis failed.");
+      }
+
+      setAnalysis(payload);
+      setScreen("results");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Analysis failed.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
 
   function goTo(next: Screen) {
+    setError("");
     setScreen(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -132,9 +182,17 @@ export default function Home() {
     <main className={isLowCarbon ? "app low-carbon-on" : "app low-carbon-off"}>
       {!isLowCarbon && <AnimatedBackdrop src={background.src} className={background.className} />}
       <NavBar onNavigate={goTo} isLowCarbon={isLowCarbon} onToggleMode={() => setIsLowCarbon((value) => !value)} />
-      {screen === "analyze" && <AnalyzePage text={text} setText={setText} onAnalyze={analyze} />}
+      {screen === "analyze" && (
+        <AnalyzePage text={text} setText={setText} onAnalyze={analyze} isAnalyzing={isAnalyzing} error={error} />
+      )}
       {screen === "results" && (
-        <ResultsPage analyzedText={enteredText} onLearn={() => goTo("learn")} feedback={feedback} setFeedback={setFeedback} />
+        <ResultsPage
+          analysis={analysis}
+          analyzedText={enteredText}
+          onLearn={() => goTo("learn")}
+          feedback={feedback}
+          setFeedback={setFeedback}
+        />
       )}
       {screen === "learn" && <LearnPage onStart={() => goTo("analyze")} />}
     </main>
@@ -187,10 +245,14 @@ function AnalyzePage({
   text,
   setText,
   onAnalyze,
+  isAnalyzing,
+  error,
 }: {
   text: string;
   setText: (text: string) => void;
   onAnalyze: () => void;
+  isAnalyzing: boolean;
+  error: string;
 }) {
   return (
     <section className="page landing" aria-labelledby="hero-title">
@@ -209,7 +271,16 @@ function AnalyzePage({
             aria-label="Text to analyze"
           />
           <div className="counter">{text.length} / 1000</div>
-          <button className="primary-button" onClick={onAnalyze}>Analyze Now</button>
+          {error && (
+            <div className="form-error" role="alert">
+              <AlertCircle size={16} aria-hidden="true" />
+              <span>{error}</span>
+            </div>
+          )}
+          <button className="primary-button" onClick={onAnalyze} disabled={isAnalyzing}>
+            {isAnalyzing ? <LoaderCircle className="spin" size={18} aria-hidden="true" /> : null}
+            {isAnalyzing ? "Analyzing..." : "Analyze Now"}
+          </button>
         </div>
       </section>
 
@@ -229,53 +300,73 @@ function AnalyzePage({
 }
 
 function ResultsPage({
+  analysis,
   analyzedText,
   onLearn,
   feedback,
   setFeedback,
 }: {
+  analysis: AnalysisResult | null;
   analyzedText: string;
   onLearn: () => void;
   feedback: "yes" | "no" | null;
   setFeedback: (value: "yes" | "no") => void;
 }) {
+  const verdict = analysis?.label === "greenwashing" ? "GREENWASHING" : "NOT GREENWASHING";
+  const confidence = Math.round((analysis?.confidence ?? 0) * 100);
+  const greenwashingProbability = Math.round((analysis?.probabilities.greenwashing ?? 0) * 100);
+  const notGreenwashingProbability = Math.round((analysis?.probabilities.not_greenwashing ?? 0) * 100);
+  const verdictClass = analysis?.label === "greenwashing" ? "warning" : "clear";
+
   return (
     <section className="page results" aria-labelledby="results-title">
       <div className="results-body">
         <div className="left-col">
-          <section className="verdict-card" aria-labelledby="results-title">
+          <section className={`verdict-card ${verdictClass}`} aria-labelledby="results-title">
             <p>Classification</p>
-            <h1 id="results-title">GREENWASHING</h1>
-            <span>The analyzed text contains claims that may be misleading or unsubstantiated.</span>
+            <h1 id="results-title">{analysis ? verdict : "NO ANALYSIS YET"}</h1>
+            <span>
+              {analysis?.label === "greenwashing"
+                ? "The model found patterns associated with potentially misleading or unsubstantiated sustainability claims."
+                : "The model did not find strong greenwashing patterns in this text."}
+            </span>
           </section>
 
           <section className="card confidence" aria-labelledby="confidence-title">
             <div className="row between">
               <h2 id="confidence-title">Confidence Score</h2>
-              <strong>85%</strong>
+              <strong>{confidence}%</strong>
             </div>
-            <div className="progress" aria-label="Confidence score 85 percent">
-              <span />
+            <div className="progress" aria-label={`Confidence score ${confidence} percent`}>
+              <span style={{ width: `${confidence}%` }} />
+            </div>
+            <div className="probability-grid" aria-label="Class probabilities">
+              <div>
+                <span>Greenwashing</span>
+                <strong>{greenwashingProbability}%</strong>
+              </div>
+              <div>
+                <span>Not greenwashing</span>
+                <strong>{notGreenwashingProbability}%</strong>
+              </div>
             </div>
           </section>
 
           <section className="card heatmap" aria-labelledby="heatmap-title">
             <div className="row heat-title">
-              <h2 id="heatmap-title">Explainability Heatmap (LIME/SHAP Analysis)</h2>
+              <h2 id="heatmap-title">Suspicious Phrase Highlights</h2>
               <Info size={16} aria-hidden="true" />
             </div>
             <div className="heat-body">
-              <p>
-                {splitAnalyzedText(analyzedText).before}
-                <mark className="orange">100% natural</mark>
-                {splitAnalyzedText(analyzedText).middle}
-                <mark className="red">zero impact</mark>
-                {splitAnalyzedText(analyzedText).after}
-              </p>
+              <p
+                dangerouslySetInnerHTML={{
+                  __html: analysis?.highlighted_text || analyzedText,
+                }}
+              />
             </div>
             <div className="legend">
-              <span><i className="dot orange-dot" />Vague Claim</span>
-              <span><i className="dot red-dot" />Unsubstantiated</span>
+              <span><i className="dot orange-dot" />Rule-based phrase match</span>
+              <span><i className="dot green-dot" />Classifier remains primary</span>
             </div>
           </section>
 
@@ -294,38 +385,27 @@ function ResultsPage({
 
         <aside className="right-col" aria-label="Analysis details">
           <section className="card tactic">
-            <p>Potential Greenwashing Tactic Detected</p>
-            <strong>The Sin of No Proof</strong>
-            <span>An environmental claim that cannot be substantiated by easily accessible supporting information or by a reliable third-party certification.</span>
+            <p>Suspicious Phrases Detected</p>
+            <div className="phrase-list">
+              {analysis?.suspicious_phrases.length ? (
+                analysis.suspicious_phrases.map((phrase) => <strong key={phrase}>{phrase}</strong>)
+              ) : (
+                <span>No configured suspicious phrases were found.</span>
+              )}
+            </div>
             <button onClick={onLearn}>Learn more on Greenwashing 101 <ArrowRight size={14} aria-hidden="true" /></button>
           </section>
 
-          <section className="card company">
-            <h2>Optional Company Context</h2>
-            <p><strong>Company:</strong> GreenShoe Co.</p>
-            <p><strong>ESG Risk:</strong> <span>Moderate</span></p>
-            <small>This is a prototype value. Real ESG data would be sourced from third-party providers.</small>
+          <section className="card company auxiliary">
+            <h2>Auxiliary Sentiment</h2>
+            <p><strong>Label:</strong> <span>{analysis?.sentiment.label ?? "neutral"}</span></p>
+            <p><strong>Score:</strong> <span>{Math.round((analysis?.sentiment.score ?? 0) * 100)}%</span></p>
+            <small>Sentiment is shown as context only and does not change the classifier label.</small>
           </section>
         </aside>
       </div>
     </section>
   );
-}
-
-function splitAnalyzedText(text: string) {
-  const fallback = {
-    before: "Our new sneakers are ",
-    middle: " and have ",
-    after: " on the environment. We are committed to a greener future with sustainable practices.",
-  };
-
-  if (!text.includes("100% natural") || !text.includes("zero impact")) {
-    return fallback;
-  }
-
-  const [before, rest] = text.split("100% natural");
-  const [middle, after] = rest.split("zero impact");
-  return { before, middle, after };
 }
 
 function LearnPage({ onStart }: { onStart: () => void }) {

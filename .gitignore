@@ -3,6 +3,10 @@ node_modules/
 out/
 dev-server.log
 dev-server.err.log
+api-server.log
+api-server.err.log
+frontend-server.log
+frontend-server.err.log
 next-dev.log
 next-dev.err.log
 npm-debug.log*
