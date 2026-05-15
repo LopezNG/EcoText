@@ -181,7 +181,12 @@ export default function Home() {
   return (
     <main className={isLowCarbon ? "app low-carbon-on" : "app low-carbon-off"}>
       {!isLowCarbon && <AnimatedBackdrop src={background.src} className={background.className} />}
-      <NavBar onNavigate={goTo} isLowCarbon={isLowCarbon} onToggleMode={() => setIsLowCarbon((value) => !value)} />
+      <NavBar
+        currentScreen={screen}
+        onNavigate={goTo}
+        isLowCarbon={isLowCarbon}
+        onToggleMode={() => setIsLowCarbon((value) => !value)}
+      />
       {screen === "analyze" && (
         <AnalyzePage text={text} setText={setText} onAnalyze={analyze} isAnalyzing={isAnalyzing} error={error} />
       )}
@@ -208,34 +213,67 @@ function AnimatedBackdrop({ src, className }: { src: string; className: string }
 }
 
 function NavBar({
+  currentScreen,
   onNavigate,
   isLowCarbon,
   onToggleMode,
 }: {
+  currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
   isLowCarbon: boolean;
   onToggleMode: () => void;
 }) {
+  const links: Array<{ label: string; screen?: Screen }> = [
+    { label: "Analyze", screen: "analyze" },
+    { label: "Learn", screen: "learn" },
+    { label: "About" },
+  ];
+
   return (
     <header className="nav">
-      <button className="logo" onClick={() => onNavigate("analyze")} aria-label="EcoText home">
-        <Leaf size={24} aria-hidden="true" />
-        <span>EcoText</span>
-      </button>
-      <nav className="nav-center" aria-label="Primary">
-        <button onClick={() => onNavigate("analyze")}>Analyze</button>
-        <button onClick={() => onNavigate("learn")}>Learn</button>
-        <button type="button">About</button>
-      </nav>
-      <div className="nav-right">
-        <button className="mode-toggle" type="button" aria-pressed={isLowCarbon} onClick={onToggleMode}>
-          {isLowCarbon ? <Sun size={16} aria-hidden="true" /> : <Zap size={16} aria-hidden="true" />}
-          <span>Low-Carbon Mode</span>
-          <span className={isLowCarbon ? "switch on" : "switch off"} aria-hidden="true">
-            <span />
+      <div className="nav-shell">
+        <button className="logo" onClick={() => onNavigate("analyze")} aria-label="EcoText home">
+          <span className="logo-mark" aria-hidden="true">
+            <Leaf size={19} />
           </span>
+          <span>EcoText</span>
         </button>
-        <button className="feedback" type="button">Submit Feedback</button>
+        <nav className="nav-center" aria-label="Primary navigation">
+          {links.map((link) => {
+            const isActive = Boolean(link.screen && currentScreen === link.screen);
+            return (
+              <button
+                key={link.label}
+                className={isActive ? "nav-link active" : "nav-link"}
+                type="button"
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => {
+                  if (link.screen) {
+                    onNavigate(link.screen);
+                  }
+                }}
+              >
+                {link.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="nav-right">
+          <button
+            className="mode-toggle"
+            type="button"
+            aria-label={isLowCarbon ? "Turn off low-carbon mode" : "Turn on low-carbon mode"}
+            aria-pressed={isLowCarbon}
+            onClick={onToggleMode}
+          >
+            {isLowCarbon ? <Sun size={16} aria-hidden="true" /> : <Zap size={16} aria-hidden="true" />}
+            <span>Low-Carbon Mode</span>
+            <span className={isLowCarbon ? "switch on" : "switch off"} aria-hidden="true">
+              <span />
+            </span>
+          </button>
+          <button className="feedback" type="button">Submit Feedback</button>
+        </div>
       </div>
     </header>
   );
