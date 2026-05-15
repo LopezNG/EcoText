@@ -112,17 +112,13 @@ textarea:focus-visible {
   top: 0;
   z-index: 10;
   width: 100%;
-  padding: 12px 40px;
-  background: rgba(255, 255, 255, 0.94);
-  border-bottom: 1px solid var(--border-light);
-  box-shadow: 0 2px 14px rgba(27, 94, 32, 0.06);
-  backdrop-filter: blur(12px);
+  padding: 14px 40px 10px;
+  background: linear-gradient(180deg, rgba(248, 255, 248, 0.96), rgba(248, 255, 248, 0));
+  pointer-events: none;
 }
 
 .low-carbon-off .nav {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 2px 16px rgba(27, 94, 32, 0.12);
+  background: linear-gradient(180deg, rgba(241, 248, 233, 0.82), rgba(241, 248, 233, 0));
 }
 
 .nav-shell {
@@ -132,6 +128,18 @@ textarea:focus-visible {
   width: min(1180px, 100%);
   min-height: 48px;
   margin: 0 auto;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid rgba(200, 230, 201, 0.9);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 30px rgba(27, 94, 32, 0.11);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+.low-carbon-off .nav-shell {
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 34px rgba(27, 94, 32, 0.16);
 }
 
 .logo,
@@ -177,9 +185,9 @@ textarea:focus-visible {
   gap: 4px;
   min-width: 0;
   padding: 4px;
-  border: 1px solid var(--border-light);
+  border: 1px solid rgba(232, 245, 233, 0.9);
   border-radius: 999px;
-  background: rgba(241, 248, 233, 0.62);
+  background: rgba(241, 248, 233, 0.68);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -204,7 +212,7 @@ textarea:focus-visible {
 .nav-link.active {
   background: var(--bg-card);
   color: var(--font-primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 3px 12px rgba(27, 94, 32, 0.1);
 }
 
 .nav-right {
@@ -217,13 +225,12 @@ textarea:focus-visible {
   gap: 8px;
   min-height: 38px;
   padding: 6px 10px 6px 12px;
-  border: 1px solid var(--border-light);
+  border: 1px solid rgba(232, 245, 233, 0.95);
   border-radius: 999px;
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--font-secondary);
   font-size: 12px;
   font-weight: 600;
-  box-shadow: var(--shadow-sm);
   transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
@@ -286,7 +293,7 @@ textarea:focus-visible {
 .page {
   position: relative;
   z-index: 1;
-  min-height: calc(100vh - 73px);
+  min-height: calc(100vh - 82px);
   background: var(--bg);
 }
 
@@ -1005,12 +1012,14 @@ mark.red {
 
 @media (max-width: 860px) {
   .nav {
-    padding: 16px 24px;
+    padding: 12px 20px 8px;
   }
 
   .nav-shell {
     flex-wrap: wrap;
     gap: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
   }
 
   .nav-center {
@@ -1028,7 +1037,7 @@ mark.red {
   }
 
   .page {
-    min-height: calc(100vh - 132px);
+    min-height: calc(100vh - 134px);
   }
 
   .hero h1 {
@@ -1056,7 +1065,7 @@ mark.red {
 
 @media (max-width: 620px) {
   .nav {
-    padding: 12px 16px;
+    padding: 10px 12px 8px;
   }
 
   .logo {
@@ -1067,6 +1076,7 @@ mark.red {
     justify-content: stretch;
     gap: 4px;
     width: 100%;
+    order: 3;
   }
 
   .nav-link {
